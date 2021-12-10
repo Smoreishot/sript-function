@@ -1,0 +1,46 @@
+function DecToHex(number: number) :: string:
+    return ("00" if {_number} <= 0, else ("FF")) if {_number} is not between 0 and 255
+    return join (character at (mod((floor({_number} / 16)), 16) + 1) in "0123456789ABCDEF") and (character at ((mod({_number}, 16)) + 1) in "0123456789ABCDEF")
+ 
+
+function HexToRGB(hex: string) :: numbers:
+    replace all "##" with "" in {_hex}
+    set {_s::*} to split "0123456789abcdefklmnor" at ""
+    loop 3 times:
+        set {_n} to subtext of {_hex} from characters (loop-value -1)*2+1  to loop-value*2
+        loop {_s::*}:
+            add loop-index parsed as number-1 to {_rgb::%loop-value-1%} if 2nd element out of (split {_n} at "") = loop-value-2
+            add (loop-index parsed as number-1)*16 to {_rgb::%loop-value-1%} if first element out of (split {_n} at "") = loop-value-2   
+    return {_rgb::*}
+
+function rainbow(input: string, wrapAmount: number = -1, lightness: number = 0.5) :: string:
+    set {_delta} to 360 / ({_wrapAmount} if {_wrapAmount} > 0, else length of {_input})
+    set {_lightnessModifier} to (({_lightness}*2)-1) * 255
+    set {_angle} to 90
+    loop length of {_input} times:
+        set {_character} to character at loop-value in {_input}
+        if {_character} or (character at (loop-value - 1) in {_input}) is "§":
+            if "abcdefklmnor0123456789" contains {_character}:
+                set {_format} to (join {_format} and "&%{_character}%") if {_character} is not "r", else ("")
+            continue
+        set {_output} to join {_output}, "<##%decimalToHexadecimal((0.5 * (sin({_angle}) + 1)) * 255 + {_lightnessModifier})%%decimalToHexadecimal((0.5 * (sin({_angle} + 120) + 1)) * 255 + {_lightnessModifier})%%decimalToHexadecimal((0.5 * (sin({_angle} + 240) + 1)) * 255 + {_lightnessModifier})%>", {_format} and {_character}
+        remove {_delta} from {_angle}
+    return colored {_output}
+ 
+function gradient(color: strings, input: string) :: string:
+    loop {_color::*}:
+        set {_rgb::%loop-index%::*} to HexToRGB(loop-value)
+    set {_n} to size of {_color::*} -1
+    loop {_n} times:
+        set {_delta} to 180 / (length of uncolored {_input}/{_n} - 1)
+        broadcast "%length of uncolored {_input}%"
+        loop (length of {_input}/{_n}) times:
+            set {_character} to character at ((loop-value-1) -1)*(floor((length of {_input})/{_n})) + (loop-value-2) in {_input}
+            if {_character} or (character at (((loop-value-1) -1)*((length of {_input})/{_n}) + (loop-value-2))-1 in {_input}) is "§":
+                if "abcdefklmnor0123456789" contains {_character}:
+                    set {_format} to (join {_format} and "&%{_character}%") if {_character} is not "r", else ("")
+                continue
+            set {_startColorProportion} to (0.5 * (sin(({_delta}*((loop-value-2)-1))+90) + 1))
+            set {_endColorProportion} to (0.5 * (sin(({_delta}*((loop-value-2)-1))+270) + 1))
+            set {_output} to join {_output}, "<##%decimalToHexadecimal(({_rgb::%loop-value-1%::1} * {_startColorProportion}) + ({_rgb::%((loop-value-1) + 1)%::1} * {_endColorProportion}))%%decimalToHexadecimal(({_rgb::%loop-value-1%::2} * {_startColorProportion}) + ({_rgb::%((loop-value-1) + 1)%::2} * {_endColorProportion}))%%decimalToHexadecimal(({_rgb::%loop-value-1%::3} * {_startColorProportion}) + ({_rgb::%((loop-value-1) + 1)%::3} * {_endColorProportion}))%>", {_format} and {_character}
+    return colored {_output}
